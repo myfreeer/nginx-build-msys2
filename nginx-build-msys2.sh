@@ -1,15 +1,25 @@
-git clone https://github.com/nginx/nginx --depth=1
-cd nginx
+#!/bin/bash
+
+# init
+machine_str="$(gcc -dumpmachine)"
+
+# dep versions
 ZLIB="zlib-1.2.11"
 PCRE="pcre-8.42"
 OPENSSL="openssl-1.1.0h"
-wget "https://download.sourceforge.net/libpng/${ZLIB}.tar.gz"
+
+# download
+git clone https://github.com/nginx/nginx --depth=1
+cd nginx
+wget -c "https://download.sourceforge.net/libpng/${ZLIB}.tar.gz"
 tar -xf "${ZLIB}.tar.gz"
-wget "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
+wget -c "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
 tar -xf "${PCRE}.tar.bz2"
-wget "https://www.openssl.org/source/${OPENSSL}.tar.gz"
+wget -c "https://www.openssl.org/source/${OPENSSL}.tar.gz"
 tar -xf "${OPENSSL}.tar.gz"
-auto/configure \
+
+# configure
+configure_args=(
     --sbin-path=nginx.exe \
     --http-client-body-temp-path=temp/client_body \
     --http-proxy-temp-path=temp/proxy \
@@ -32,5 +42,20 @@ auto/configure \
     --with-stream_ssl_module \
     --with-http_v2_module \
     --prefix=
+)
+auto/configure ${configure_args[@]}
+
+# build
 make -j$(nproc)
 strip -s objs/nginx.exe
+mv -f "objs/nginx.exe" "../nginx-${machine_str}.exe"
+
+# re-configure with debugging log
+configure_args+=(--with-debug)
+auto/configure ${configure_args[@]}
+
+# re-build with debugging log
+make -j$(nproc)
+mv -f "objs/nginx.exe" "../nginx-${machine_str}-debug.exe"
+
+cd ..
