@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # init
-machine_str="$(gcc -dumpmachine)"
+machine_str="$(gcc -dumpmachine | cut -d'-' -f1)"
 
 # dep versions
 ZLIB="zlib-1.2.11"
@@ -49,7 +49,8 @@ auto/configure ${configure_args[@]}
 # build
 make -j$(nproc)
 strip -s objs/nginx.exe
-mv -f "objs/nginx.exe" "../nginx-${machine_str}.exe"
+version="$(objs/nginx.exe 2>&1 | cut -d'/' -f2)"
+mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 
 # re-configure with debugging log
 configure_args+=(--with-debug)
@@ -57,6 +58,7 @@ auto/configure ${configure_args[@]}
 
 # re-build with debugging log
 make -j$(nproc)
-mv -f "objs/nginx.exe" "../nginx-${machine_str}-debug.exe"
+version="$(objs/nginx.exe 2>&1 | cut -d'/' -f2)"
+mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}-debug.exe"
 
 cd ..
