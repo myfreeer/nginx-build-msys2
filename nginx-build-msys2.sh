@@ -49,7 +49,7 @@ auto/configure ${configure_args[@]}
 # build
 make -j$(nproc)
 strip -s objs/nginx.exe
-version="$(objs/nginx.exe 2>&1 | cut -d'/' -f2)"
+version="$(cat src/core/nginx.h | grep NGINX_VERSION | grep -ioP '((\d+\.)+\d)')"
 mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 
 # re-configure with debugging log
@@ -58,7 +58,6 @@ auto/configure ${configure_args[@]}
 
 # re-build with debugging log
 make -j$(nproc)
-version="$(objs/nginx.exe 2>&1 | cut -d'/' -f2)"
 mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}-debug.exe"
 
 cd ..
