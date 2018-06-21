@@ -23,7 +23,6 @@ auto/configure \
     --with-mail \
     --with-select_module \
     --with-stream \
-    --with-threads \
     --with-pcre=${PCRE} \
     --with-pcre-jit \
     --with-zlib=${ZLIB} \
