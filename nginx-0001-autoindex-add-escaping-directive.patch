@@ -1,7 +1,7 @@
-From ca378274606e62c911839a235e6eda0b1257b812 Mon Sep 17 00:00:00 2001
+From b4325a4737837e20e1c11adf667bc8687ebbb11a Mon Sep 17 00:00:00 2001
 From: myfreeer <myfreeer@users.noreply.github.com>
-Date: Fri, 20 Jul 2018 09:04:32 +0800
-Subject: [PATCH] autoindex: add directive to turn off html href escaping
+Date: Fri, 20 Jul 2018 10:10:18 +0800
+Subject: [PATCH] autoindex: add escaping directive
 
 Syntax:   autoindex_escape_href on | off;
 Default:  autoindex_escape_href on;
@@ -9,11 +9,11 @@ Context:  http, server, location
 
 For the HTML format, specifies whether href attribute should be escaped.
 ---
- src/http/modules/ngx_http_autoindex_module.c | 22 +++++++++++++++-----
- 1 file changed, 17 insertions(+), 5 deletions(-)
+ src/http/modules/ngx_http_autoindex_module.c | 25 +++++++++++++++-----
+ 1 file changed, 19 insertions(+), 6 deletions(-)
 
 diff --git a/src/http/modules/ngx_http_autoindex_module.c b/src/http/modules/ngx_http_autoindex_module.c
-index 94b91db..07c85d2 100644
+index 94b91db..da7adae 100644
 --- a/src/http/modules/ngx_http_autoindex_module.c
 +++ b/src/http/modules/ngx_http_autoindex_module.c
 @@ -42,9 +42,9 @@ typedef struct {
@@ -41,8 +41,12 @@ index 94b91db..07c85d2 100644
        ngx_null_command
  };
  
-@@ -487,10 +494,13 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
+@@ -485,12 +492,17 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
+           + sizeof("</pre><hr>") - 1
+           + sizeof(tail) - 1;
  
++    alcf = ngx_http_get_module_loc_conf(r, ngx_http_autoindex_module);
++
      entry = entries->elts;
      for (i = 0; i < entries->nelts; i++) {
 -        entry[i].escape = 2 * ngx_escape_uri(NULL, entry[i].name.data,
@@ -59,7 +63,15 @@ index 94b91db..07c85d2 100644
          entry[i].escape_html = ngx_escape_html(NULL, entry[i].name.data,
                                                 entry[i].name.len);
  
-@@ -1016,6 +1026,7 @@ ngx_http_autoindex_create_loc_conf(ngx_conf_t *cf)
+@@ -537,7 +549,6 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
+     b->last = ngx_cpymem(b->last, "<hr><pre><a href=\"../\">../</a>" CRLF,
+                          sizeof("<hr><pre><a href=\"../\">../</a>" CRLF) - 1);
+ 
+-    alcf = ngx_http_get_module_loc_conf(r, ngx_http_autoindex_module);
+     tp = ngx_timeofday();
+ 
+     for (i = 0; i < entries->nelts; i++) {
+@@ -1016,6 +1027,7 @@ ngx_http_autoindex_create_loc_conf(ngx_conf_t *cf)
      conf->format = NGX_CONF_UNSET_UINT;
      conf->localtime = NGX_CONF_UNSET;
      conf->exact_size = NGX_CONF_UNSET;
@@ -67,7 +79,7 @@ index 94b91db..07c85d2 100644
  
      return conf;
  }
-@@ -1032,6 +1043,7 @@ ngx_http_autoindex_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
+@@ -1032,6 +1044,7 @@ ngx_http_autoindex_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
                                NGX_HTTP_AUTOINDEX_HTML);
      ngx_conf_merge_value(conf->localtime, prev->localtime, 0);
      ngx_conf_merge_value(conf->exact_size, prev->exact_size, 1);
