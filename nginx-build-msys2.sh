@@ -47,12 +47,22 @@ configure_args=(
     --http-fastcgi-temp-path=temp/fastcgi \
     --http-scgi-temp-path=temp/scgi \
     --http-uwsgi-temp-path=temp/uwsgi \
+    --with-select_module \
+    --with-http_v2_module \
+    --with-http_realip_module \
     --with-http_addition_module \
     --with-http_sub_module \
-    --with-http_auth_request_module \
+    --with-http_dav_module \
     --with-http_stub_status_module \
+    --with-http_flv_module \
+    --with-http_mp4_module \
+    --with-http_gunzip_module \
+    --with-http_gzip_static_module \
+    --with-http_auth_request_module \
+    --with-http_random_index_module \
+    --with-http_secure_link_module \
+    --with-http_slice_module \
     --with-mail \
-    --with-select_module \
     --with-stream \
     --with-pcre=${PCRE} \
     --with-pcre-jit \
@@ -61,7 +71,6 @@ configure_args=(
     --with-http_ssl_module \
     --with-mail_ssl_module \
     --with-stream_ssl_module \
-    --with-http_v2_module \
     --prefix=
 )
 
