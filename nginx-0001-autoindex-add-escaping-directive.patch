@@ -1,0 +1,80 @@
+From ca378274606e62c911839a235e6eda0b1257b812 Mon Sep 17 00:00:00 2001
+From: myfreeer <myfreeer@users.noreply.github.com>
+Date: Fri, 20 Jul 2018 09:04:32 +0800
+Subject: [PATCH] autoindex: add directive to turn off html href escaping
+
+Syntax:   autoindex_escape_href on | off;
+Default:  autoindex_escape_href on;
+Context:  http, server, location
+
+For the HTML format, specifies whether href attribute should be escaped.
+---
+ src/http/modules/ngx_http_autoindex_module.c | 22 +++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/src/http/modules/ngx_http_autoindex_module.c b/src/http/modules/ngx_http_autoindex_module.c
+index 94b91db..07c85d2 100644
+--- a/src/http/modules/ngx_http_autoindex_module.c
++++ b/src/http/modules/ngx_http_autoindex_module.c
+@@ -42,9 +42,9 @@ typedef struct {
+     ngx_uint_t     format;
+     ngx_flag_t     localtime;
+     ngx_flag_t     exact_size;
++    ngx_flag_t     escape_href;
+ } ngx_http_autoindex_loc_conf_t;
+ 
+-
+ #define NGX_HTTP_AUTOINDEX_HTML         0
+ #define NGX_HTTP_AUTOINDEX_JSON         1
+ #define NGX_HTTP_AUTOINDEX_JSONP        2
+@@ -114,6 +114,13 @@ static ngx_command_t  ngx_http_autoindex_commands[] = {
+       offsetof(ngx_http_autoindex_loc_conf_t, exact_size),
+       NULL },
+ 
++    { ngx_string("autoindex_escape_href"),
++      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
++      ngx_conf_set_flag_slot,
++      NGX_HTTP_LOC_CONF_OFFSET,
++      offsetof(ngx_http_autoindex_loc_conf_t, escape_href),
++      NULL },
++
+       ngx_null_command
+ };
+ 
+@@ -487,10 +494,13 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
+ 
+     entry = entries->elts;
+     for (i = 0; i < entries->nelts; i++) {
+-        entry[i].escape = 2 * ngx_escape_uri(NULL, entry[i].name.data,
+-                                             entry[i].name.len,
+-                                             NGX_ESCAPE_URI_COMPONENT);
+-
++        if (alcf->escape_href) {
++            entry[i].escape = 2 * ngx_escape_uri(NULL, entry[i].name.data,
++                                                    entry[i].name.len,
++                                                    NGX_ESCAPE_URI_COMPONENT);
++        } else {
++            entry[i].escape = 0;
++        }
+         entry[i].escape_html = ngx_escape_html(NULL, entry[i].name.data,
+                                                entry[i].name.len);
+ 
+@@ -1016,6 +1026,7 @@ ngx_http_autoindex_create_loc_conf(ngx_conf_t *cf)
+     conf->format = NGX_CONF_UNSET_UINT;
+     conf->localtime = NGX_CONF_UNSET;
+     conf->exact_size = NGX_CONF_UNSET;
++    conf->escape_href = NGX_CONF_UNSET;
+ 
+     return conf;
+ }
+@@ -1032,6 +1043,7 @@ ngx_http_autoindex_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
+                               NGX_HTTP_AUTOINDEX_HTML);
+     ngx_conf_merge_value(conf->localtime, prev->localtime, 0);
+     ngx_conf_merge_value(conf->exact_size, prev->exact_size, 1);
++    ngx_conf_merge_value(conf->escape_href, prev->escape_href, 1);
+ 
+     return NGX_CONF_OK;
+ }
+-- 
+2.18.0
+
