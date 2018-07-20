@@ -1,0 +1,106 @@
+From f20ec74dfef1ad0e2792a33bef9173679398c3c8 Mon Sep 17 00:00:00 2001
+From: myfreeer <myfreeer@users.noreply.github.com>
+Date: Fri, 20 Jul 2018 14:10:25 +0800
+Subject: [PATCH] win32: force utf-8 encoding in ngx_dir_t
+
+---
+ src/os/win32/ngx_files.c | 29 +++++++++++++++++++++++++++--
+ src/os/win32/ngx_files.h |  8 +++++---
+ 2 files changed, 32 insertions(+), 5 deletions(-)
+
+diff --git a/src/os/win32/ngx_files.c b/src/os/win32/ngx_files.c
+index 55d7f76..bb3960a 100644
+--- a/src/os/win32/ngx_files.c
++++ b/src/os/win32/ngx_files.c
+@@ -427,19 +427,39 @@ ngx_realpath(u_char *path, u_char *resolved)
+ ngx_int_t
+ ngx_open_dir(ngx_str_t *name, ngx_dir_t *dir)
+ {
++    size_t      len;
++    u_short    *u;
++    u_short     utf16[NGX_UTF16_BUFLEN];
+     ngx_cpystrn(name->data + name->len, NGX_DIR_MASK, NGX_DIR_MASK_LEN + 1);
+ 
+-    dir->dir = FindFirstFile((const char *) name->data, &dir->finddata);
++    len = NGX_UTF16_BUFLEN;
++    u = ngx_utf8_to_utf16(utf16, name->data, &len);
++
++    if (u == NULL) {
++        return NGX_ERROR;
++    }
++
++    dir->dir = FindFirstFileW((LPCWSTR) u, &dir->finddata);
+ 
+     name->data[name->len] = '\0';
+ 
+     if (dir->dir == INVALID_HANDLE_VALUE) {
++        if (u != utf16) {
++            ngx_free(u);
++        }
+         return NGX_ERROR;
+     }
+ 
++    dir->utf8_length = WideCharToMultiByte(CP_UTF8, 0, dir->finddata.cFileName, -1, NULL, 0, NULL, NULL);
++    dir->utf8 = calloc(dir->utf8_length, sizeof(char));
++    WideCharToMultiByte(CP_UTF8, 0, dir->finddata.cFileName, -1, dir->utf8, dir->utf8_length, NULL, NULL);
++
+     dir->valid_info = 1;
+     dir->ready = 1;
+ 
++    if (u != utf16) {
++        ngx_free(u);
++    }
+     return NGX_OK;
+ }
+ 
+@@ -452,8 +472,12 @@ ngx_read_dir(ngx_dir_t *dir)
+         return NGX_OK;
+     }
+ 
+-    if (FindNextFile(dir->dir, &dir->finddata) != 0) {
++    if (FindNextFileW(dir->dir, &dir->finddata) != 0) {
+         dir->type = 1;
++        free(dir->utf8);
++        dir->utf8_length = WideCharToMultiByte(CP_UTF8, 0, dir->finddata.cFileName, -1, NULL, 0, NULL, NULL);
++        dir->utf8 = calloc(dir->utf8_length, sizeof(char));
++        WideCharToMultiByte(CP_UTF8, 0, dir->finddata.cFileName, -1, dir->utf8, dir->utf8_length, NULL, NULL);
+         return NGX_OK;
+     }
+ 
+@@ -464,6 +488,7 @@ ngx_read_dir(ngx_dir_t *dir)
+ ngx_int_t
+ ngx_close_dir(ngx_dir_t *dir)
+ {
++    free(dir->utf8);
+     if (FindClose(dir->dir) == 0) {
+         return NGX_ERROR;
+     }
+diff --git a/src/os/win32/ngx_files.h b/src/os/win32/ngx_files.h
+index 895daea..da98307 100644
+--- a/src/os/win32/ngx_files.h
++++ b/src/os/win32/ngx_files.h
+@@ -30,7 +30,9 @@ typedef struct {
+ 
+ typedef struct {
+     HANDLE                          dir;
+-    WIN32_FIND_DATA                 finddata;
++    WIN32_FIND_DATAW                finddata;
++    char*                           utf8;
++    int                             utf8_length;
+ 
+     unsigned                        valid_info:1;
+     unsigned                        type:1;
+@@ -208,8 +210,8 @@ ngx_int_t ngx_close_dir(ngx_dir_t *dir);
+ #define ngx_dir_access(a)           (a)
+ 
+ 
+-#define ngx_de_name(dir)            ((u_char *) (dir)->finddata.cFileName)
+-#define ngx_de_namelen(dir)         ngx_strlen((dir)->finddata.cFileName)
++#define ngx_de_name(dir)            ((u_char *) (dir)->utf8)
++#define ngx_de_namelen(dir)         ((dir)->utf8_length - 1)
+ 
+ ngx_int_t ngx_de_info(u_char *name, ngx_dir_t *dir);
+ #define ngx_de_info_n               "dummy()"
+-- 
+2.18.0
+
