@@ -3,19 +3,40 @@
 # init
 machine_str="$(gcc -dumpmachine | cut -d'-' -f1)"
 
+# workaround git user name and email not set
+GIT_USER_NAME="$(git config --global user.name)"
+GIT_USER_EMAIL="$(git config --global user.email)"
+if [[ "${GIT_USER_NAME}" = "" ]]; then
+    git config --global user.name "Build Bot"
+fi
+if [[ "${GIT_USER_EMAIL}" = "" ]]; then
+    git config --global user.email "you@example.com"
+fi
+
 # dep versions
 ZLIB="zlib-1.2.11"
 PCRE="pcre-8.42"
 OPENSSL="openssl-1.1.0h"
 
-# download
-git clone https://github.com/nginx/nginx --depth=1
-cd nginx
-wget -c "https://download.sourceforge.net/libpng/${ZLIB}.tar.gz"
+# clone and patch nginx
+if [[ -d nginx ]]; then
+    cd nginx
+    git checkout master
+    git reset --hard origin || git reset --hard
+    git pull
+else
+    git clone https://github.com/nginx/nginx.git --depth=1 --config http.sslVerify=false
+    cd nginx
+fi
+git checkout -b patch
+git am -3 ../nginx-*.patch
+
+# download deps
+wget -c -nv "https://download.sourceforge.net/libpng/${ZLIB}.tar.gz"
 tar -xf "${ZLIB}.tar.gz"
-wget -c "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
+wget -c -nv "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
 tar -xf "${PCRE}.tar.bz2"
-wget -c "https://www.openssl.org/source/${OPENSSL}.tar.gz"
+wget -c -nv "https://www.openssl.org/source/${OPENSSL}.tar.gz"
 tar -xf "${OPENSSL}.tar.gz"
 
 # configure
@@ -60,4 +81,7 @@ auto/configure ${configure_args[@]}
 make -j$(nproc)
 mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}-debug.exe"
 
+# clean up
+git checkout master
+git branch patch -D
 cd ..
