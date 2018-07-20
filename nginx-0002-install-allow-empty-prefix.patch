@@ -1,0 +1,81 @@
+From 7094ee0c174c37d0b9f6f409b08dfd6f1ec39ea9 Mon Sep 17 00:00:00 2001
+From: myfreeer <myfreeer@users.noreply.github.com>
+Date: Fri, 20 Jul 2018 09:39:30 +0800
+Subject: [PATCH] install: allow prefix with relative path
+
+---
+ auto/install | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/auto/install b/auto/install
+index d884487..5935a70 100644
+--- a/auto/install
++++ b/auto/install
+@@ -16,12 +16,18 @@ END
+ fi
+ 
+ 
++if [ "${NGX_PREFIX}" == "" ]; then
++	NGX_PREFIX_PATH=""
++else
++	NGX_PREFIX_PATH="${NGX_PREFIX}/"
++fi
++
+ case ".$NGX_SBIN_PATH" in
+     ./*)
+     ;;
+ 
+     *)
+-        NGX_SBIN_PATH=$NGX_PREFIX/$NGX_SBIN_PATH
++        NGX_SBIN_PATH=${NGX_PREFIX_PATH}$NGX_SBIN_PATH
+     ;;
+ esac
+ 
+@@ -31,7 +37,7 @@ case ".$NGX_MODULES_PATH" in
+     ;;
+ 
+     *)
+-        NGX_MODULES_PATH=$NGX_PREFIX/$NGX_MODULES_PATH
++        NGX_MODULES_PATH=${NGX_PREFIX_PATH}$NGX_MODULES_PATH
+     ;;
+ esac
+ 
+@@ -43,7 +49,7 @@ case ".$NGX_CONF_PATH" in
+     ;;
+ 
+     *)
+-        NGX_CONF_PATH=$NGX_PREFIX/$NGX_CONF_PATH
++        NGX_CONF_PATH=${NGX_PREFIX_PATH}$NGX_CONF_PATH
+     ;;
+ esac
+ 
+@@ -56,7 +62,7 @@ case ".$NGX_PID_PATH" in
+     ;;
+ 
+     *)
+-        NGX_PID_PATH=$NGX_PREFIX/$NGX_PID_PATH
++        NGX_PID_PATH=${NGX_PREFIX_PATH}$NGX_PID_PATH
+     ;;
+ esac
+ 
+@@ -66,7 +72,7 @@ case ".$NGX_ERROR_LOG_PATH" in
+     ;;
+ 
+     *)
+-        NGX_ERROR_LOG_PATH=$NGX_PREFIX/$NGX_ERROR_LOG_PATH
++        NGX_ERROR_LOG_PATH=${NGX_PREFIX_PATH}$NGX_ERROR_LOG_PATH
+     ;;
+ esac
+ 
+@@ -76,7 +82,7 @@ case ".$NGX_HTTP_LOG_PATH" in
+     ;;
+ 
+     *)
+-        NGX_HTTP_LOG_PATH=$NGX_PREFIX/$NGX_HTTP_LOG_PATH
++        NGX_HTTP_LOG_PATH=${NGX_PREFIX_PATH}$NGX_HTTP_LOG_PATH
+     ;;
+ esac
+ 
+-- 
+2.18.0
+
