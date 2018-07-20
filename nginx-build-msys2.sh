@@ -71,6 +71,8 @@ configure_args=(
     --with-http_ssl_module \
     --with-mail_ssl_module \
     --with-stream_ssl_module \
+    --with-cc-opt='-O2 -pipe -Wall' \
+    --with-ld-opt='-Wl,--gc-sections,--build-id=none' \
     --prefix=
 )
 
