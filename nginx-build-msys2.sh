@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# cmd line switches
+for i in "$@"
+do
+  case $i in
+    -t=*|--tag=*)
+      NGINX_TAG="${i#*=}"
+      shift # past argument=value
+    ;;
+  esac
+done
+
 # init
 machine_str="$(gcc -dumpmachine | cut -d'-' -f1)"
 
@@ -22,10 +33,18 @@ OPENSSL="openssl-1.1.0h"
 if [[ -d nginx ]]; then
     cd nginx
     git checkout master
-    git reset --hard origin || git reset --hard
-    git pull
+    if [[ "${NGINX_TAG}" == "" ]]; then
+        git reset --hard origin || git reset --hard
+        git pull
+    else
+        git reset --hard "${NGINX_TAG}" || git reset --hard
+    fi
 else
-    git clone https://github.com/nginx/nginx.git --depth=1 --config http.sslVerify=false
+    if [[ "${NGINX_TAG}" == "" ]]; then
+        git clone https://github.com/nginx/nginx.git --depth=1
+    else
+        git clone https://github.com/nginx/nginx.git --depth=1 --branch "${NGINX_TAG}"
+    fi
     cd nginx
 fi
 git checkout -b patch
