@@ -1,0 +1,18 @@
+version: 1.0.{build}
+build_script:
+- cmd: >-
+    appveyor_build.bat
+shallow_clone: true
+test: off
+artifacts:
+- path: nginx-bin.7z
+skip_commits:
+  files:
+    - 'LICENSE'
+    - '*.md'
+    - '.gitingore'
+deploy:
+- provider: Environment
+  name: github
+  on:
+    appveyor_repo_tag: true
