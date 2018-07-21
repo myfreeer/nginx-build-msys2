@@ -90,12 +90,11 @@ configure_args=(
     --with-http_ssl_module \
     --with-mail_ssl_module \
     --with-stream_ssl_module \
-    --with-cc-opt="-O2 -fno-strict-aliasing" \
     --with-ld-opt="-Wl,--gc-sections,--build-id=none" \
     --prefix=
 )
-
-auto/configure ${configure_args[@]}
+echo ${configure_args[@]}
+auto/configure ${configure_args[@]} --with-cc-opt='-O2 -fno-strict-aliasing -pipe'
 
 # build
 make -j$(nproc)
@@ -105,7 +104,7 @@ mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 
 # re-configure with debugging log
 configure_args+=(--with-debug)
-auto/configure ${configure_args[@]}
+auto/configure ${configure_args[@]} --with-cc-opt='-O2 -fno-strict-aliasing -pipe'
 
 # re-build with debugging log
 make -j$(nproc)
