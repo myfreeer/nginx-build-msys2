@@ -27,7 +27,7 @@ fi
 # dep versions
 ZLIB="zlib-1.2.11"
 PCRE="pcre-8.42"
-OPENSSL="openssl-1.1.0h"
+OPENSSL="openssl-1.1.1"
 
 # clone and patch nginx
 if [[ -d nginx ]]; then
