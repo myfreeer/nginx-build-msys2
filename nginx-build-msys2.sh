@@ -11,6 +11,9 @@ do
   esac
 done
 
+# create dir for docs
+mkdir -p docs
+
 # init
 machine_str="$(gcc -dumpmachine | cut -d'-' -f1)"
 
@@ -58,6 +61,18 @@ tar -xf "${PCRE}.tar.bz2"
 wget -c -nv "https://www.openssl.org/source/${OPENSSL}.tar.gz"
 tar -xf "${OPENSSL}.tar.gz"
 
+# make changes
+make -f docs/GNUmakefile changes
+mv -f tmp/*/CHANGES* ../docs/
+
+# copy docs and licenses
+cp -f docs/text/LICENSE ../docs/
+cp -f docs/text/README ../docs/
+cp -pf "${OPENSSL}/LICENSE" '../docs/OpenSSL.LICENSE'
+cp -pf "${PCRE}/LICENCE" '../docs/PCRE.LICENCE'
+sed -ne '/^ (C) 1995-20/,/^  jloup@gzip\.org/p' "${ZLIB}/README" > '../docs/zlib.LICENSE'
+touch -r "${ZLIB}/README" '../docs/zlib.LICENSE'
+
 # configure
 configure_args=(
     --sbin-path=nginx.exe \
@@ -94,7 +109,7 @@ configure_args=(
     --prefix=
 )
 echo ${configure_args[@]}
-auto/configure ${configure_args[@]} --with-cc-opt='-O2 -fno-strict-aliasing -pipe'
+auto/configure ${configure_args[@]} --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe'
 
 # build
 make -j$(nproc)
