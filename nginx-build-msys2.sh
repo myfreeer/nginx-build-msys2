@@ -28,8 +28,10 @@ if [[ "${GIT_USER_EMAIL}" = "" ]]; then
 fi
 
 # dep versions
-ZLIB="zlib-1.2.11"
-PCRE="pcre-8.42"
+ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV | head -1)"
+ZLIB="${ZLIB:-zlib-1.2.11}"
+PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' | sort -ruV | head -1)"
+PCRE="${PCRE:-pcre-8.42}"
 OPENSSL="openssl-1.1.1"
 
 # clone and patch nginx
@@ -54,8 +56,8 @@ git checkout -b patch
 git am -3 ../nginx-*.patch
 
 # download deps
-wget -c -nv "https://download.sourceforge.net/libpng/${ZLIB}.tar.gz"
-tar -xf "${ZLIB}.tar.gz"
+wget -c -nv "https://zlib.net/${ZLIB}.tar.xz"
+tar -xf "${ZLIB}.tar.xz"
 wget -c -nv "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
 tar -xf "${PCRE}.tar.bz2"
 wget -c -nv "https://www.openssl.org/source/${OPENSSL}.tar.gz"
