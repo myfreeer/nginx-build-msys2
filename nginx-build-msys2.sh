@@ -32,7 +32,8 @@ ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV |
 ZLIB="${ZLIB:-zlib-1.2.11}"
 PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' | sort -ruV | head -1)"
 PCRE="${PCRE:-pcre-8.42}"
-OPENSSL="openssl-1.1.1"
+OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
+OPENSSL="${OPENSSL:-openssl-1.1.1a}"
 
 # clone and patch nginx
 if [[ -d nginx ]]; then
