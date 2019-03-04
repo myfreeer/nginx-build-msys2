@@ -30,15 +30,18 @@ fi
 # dep versions
 ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV | head -1)"
 ZLIB="${ZLIB:-zlib-1.2.11}"
+echo $ZLIB
 PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' | sort -ruV | head -1)"
-PCRE="${PCRE:-pcre-8.42}"
+PCRE="${PCRE:-pcre-8.43}"
+echo $PCRE
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1a}"
-
+OPENSSL="${OPENSSL:-openssl-1.1.1b}"
+echo $OPENSSL
 # clone and patch nginx
 if [[ -d nginx ]]; then
     cd nginx
     git checkout master
+    git branch patch -D
     if [[ "${NGINX_TAG}" == "" ]]; then
         git reset --hard origin || git reset --hard
         git pull
@@ -84,7 +87,6 @@ configure_args=(
     --http-fastcgi-temp-path=temp/fastcgi \
     --http-scgi-temp-path=temp/scgi \
     --http-uwsgi-temp-path=temp/uwsgi \
-    --with-select_module \
     --with-http_v2_module \
     --with-http_realip_module \
     --with-http_addition_module \
@@ -117,7 +119,7 @@ auto/configure ${configure_args[@]} --with-cc-opt='-s -O2 -fno-strict-aliasing -
 # build
 make -j$(nproc)
 strip -s objs/nginx.exe
-version="$(cat src/core/nginx.h | grep NGINX_VERSION | grep -ioP '((\d+\.)+\d)')"
+version="$(cat src/core/nginx.h | grep NGINX_VERSION | grep -ioP '((\d+\.)+\d+)')"
 mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 
 # re-configure with debugging log
