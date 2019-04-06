@@ -37,6 +37,7 @@ echo $PCRE
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
 OPENSSL="${OPENSSL:-openssl-1.1.1b}"
 echo $OPENSSL
+
 # clone and patch nginx
 if [[ -d nginx ]]; then
     cd nginx
@@ -114,7 +115,9 @@ configure_args=(
     --prefix=
 )
 echo ${configure_args[@]}
-auto/configure ${configure_args[@]} --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe'
+auto/configure ${configure_args[@]} \
+    --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe' \
+    --with-openssl-opt='no-tests -D_WIN32_WINNT=0x0501'
 
 # build
 make -j$(nproc)
@@ -124,7 +127,9 @@ mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 
 # re-configure with debugging log
 configure_args+=(--with-debug)
-auto/configure ${configure_args[@]} --with-cc-opt='-O2 -fno-strict-aliasing -pipe'
+auto/configure ${configure_args[@]}  \
+    --with-cc-opt='-O2 -fno-strict-aliasing -pipe' \
+    --with-openssl-opt='no-tests -D_WIN32_WINNT=0x0501'
 
 # re-build with debugging log
 make -j$(nproc)
