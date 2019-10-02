@@ -35,7 +35,7 @@ PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' 
 PCRE="${PCRE:-pcre-8.43}"
 echo $PCRE
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1b}"
+OPENSSL="${OPENSSL:-openssl-1.1.1d}"
 echo $OPENSSL
 
 # clone and patch nginx
@@ -67,6 +67,11 @@ wget -c -nv "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
 tar -xf "${PCRE}.tar.bz2"
 wget -c -nv "https://www.openssl.org/source/${OPENSSL}.tar.gz"
 tar -xf "${OPENSSL}.tar.gz"
+
+# dirty workaround for openssl-1.1.1d
+if [ "${OPENSSL}" = "openssl-1.1.1d" ]; then
+   sed -i 's/return return 0;/return 0;/' openssl-1.1.1d/crypto/threads_none.c
+fi
 
 # make changes
 make -f docs/GNUmakefile changes
