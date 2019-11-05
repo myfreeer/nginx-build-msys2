@@ -1,0 +1,130 @@
+From 95e5e4c05f8e3d2f643fa65011c5b3527746af0b Mon Sep 17 00:00:00 2001
+From: myfreeer <myfreeer@users.noreply.github.com>
+Date: Tue, 5 Nov 2019 20:42:09 +0800
+Subject: [PATCH 2/3] ngx_files: implement ngx_open_glob and ngx_read_glob in
+ utf8 encoding
+
+include would work in non-ascii path on win32
+---
+ src/os/win32/ngx_files.c | 46 +++++++++++++++++++++++++++++-----------
+ src/os/win32/ngx_files.h |  2 +-
+ 2 files changed, 35 insertions(+), 13 deletions(-)
+
+diff --git a/src/os/win32/ngx_files.c b/src/os/win32/ngx_files.c
+index 0ed27bb..fb413f2 100644
+--- a/src/os/win32/ngx_files.c
++++ b/src/os/win32/ngx_files.c
+@@ -680,11 +680,20 @@ ngx_close_dir(ngx_dir_t *dir)
+ ngx_int_t
+ ngx_open_glob(ngx_glob_t *gl)
+ {
++    ngx_int_t  rc;
+     u_char     *p;
+     size_t      len;
+     ngx_err_t   err;
++    u_short    *u;
++    u_short     utf16[NGX_UTF16_BUFLEN];
++
++    len = NGX_UTF16_BUFLEN;
++    u = ngx_utf8_to_utf16(utf16, gl->pattern, &len);
++    if (u == NULL) {
++        return NGX_ERROR;
++    }
+ 
+-    gl->dir = FindFirstFile((const char *) gl->pattern, &gl->finddata);
++    gl->dir = FindFirstFileW((LPCWSTR) u, &gl->finddata);
+ 
+     if (gl->dir == INVALID_HANDLE_VALUE) {
+ 
+@@ -694,10 +703,12 @@ ngx_open_glob(ngx_glob_t *gl)
+              && gl->test)
+         {
+             gl->no_match = 1;
+-            return NGX_OK;
++            rc = NGX_OK;
++            goto failed;
+         }
+ 
+-        return NGX_ERROR;
++        rc = NGX_ERROR;
++        goto failed;
+     }
+ 
+     for (p = gl->pattern; *p; p++) {
+@@ -706,21 +717,30 @@ ngx_open_glob(ngx_glob_t *gl)
+         }
+     }
+ 
+-    len = ngx_strlen(gl->finddata.cFileName);
++    len = WideCharToMultiByte(CP_UTF8, 0, gl->finddata.cFileName, -1, NULL, 0, NULL, NULL);
+     gl->name.len = gl->last + len;
+ 
+     gl->name.data = ngx_alloc(gl->name.len + 1, gl->log);
+     if (gl->name.data == NULL) {
+-        return NGX_ERROR;
++        rc = NGX_ERROR;
++        goto failed;
+     }
+ 
+     ngx_memcpy(gl->name.data, gl->pattern, gl->last);
+-    ngx_cpystrn(gl->name.data + gl->last, (u_char *) gl->finddata.cFileName,
+-                len + 1);
++    WideCharToMultiByte(CP_UTF8, 0, gl->finddata.cFileName, -1,
++                        (char *) gl->name.data + gl->last, len, NULL, NULL);
++    gl->name.data[gl->name.len] = '\0';
+ 
+     gl->ready = 1;
++    rc = NGX_OK;
+ 
+-    return NGX_OK;
++failed:
++    if (u != utf16) {
++        err = ngx_errno;
++        ngx_free(u);
++        ngx_set_errno(err);
++    }
++    return rc;
+ }
+ 
+ 
+@@ -744,9 +764,9 @@ ngx_read_glob(ngx_glob_t *gl, ngx_str_t *name)
+     ngx_free(gl->name.data);
+     gl->name.data = NULL;
+ 
+-    if (FindNextFile(gl->dir, &gl->finddata) != 0) {
++    if (FindNextFileW(gl->dir, &gl->finddata) != 0) {
+ 
+-        len = ngx_strlen(gl->finddata.cFileName);
++        len = WideCharToMultiByte(CP_UTF8, 0, gl->finddata.cFileName, -1, NULL, 0, NULL, NULL);
+         gl->name.len = gl->last + len;
+ 
+         gl->name.data = ngx_alloc(gl->name.len + 1, gl->log);
+@@ -755,8 +775,10 @@ ngx_read_glob(ngx_glob_t *gl, ngx_str_t *name)
+         }
+ 
+         ngx_memcpy(gl->name.data, gl->pattern, gl->last);
+-        ngx_cpystrn(gl->name.data + gl->last, (u_char *) gl->finddata.cFileName,
+-                    len + 1);
++
++        WideCharToMultiByte(CP_UTF8, 0, gl->finddata.cFileName, -1,
++                            (char *) gl->name.data + gl->last, len, NULL, NULL);
++        gl->name.data[gl->name.len] = '\0';
+ 
+         *name = gl->name;
+ 
+diff --git a/src/os/win32/ngx_files.h b/src/os/win32/ngx_files.h
+index 6a6aa25..01e64a0 100644
+--- a/src/os/win32/ngx_files.h
++++ b/src/os/win32/ngx_files.h
+@@ -42,7 +42,7 @@ typedef struct {
+ 
+ typedef struct {
+     HANDLE                          dir;
+-    WIN32_FIND_DATA                 finddata;
++    WIN32_FIND_DATAW                finddata;
+ 
+     unsigned                        ready:1;
+     unsigned                        test:1;
+-- 
+2.23.0
+

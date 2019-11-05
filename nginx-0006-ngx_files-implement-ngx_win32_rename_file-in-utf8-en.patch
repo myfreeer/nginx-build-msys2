@@ -1,0 +1,114 @@
+From d692adb4a34324839176d31009b98f26a67e2234 Mon Sep 17 00:00:00 2001
+From: myfreeer <myfreeer@users.noreply.github.com>
+Date: Tue, 5 Nov 2019 21:19:07 +0800
+Subject: [PATCH 3/3] ngx_files: implement ngx_win32_rename_file in utf8
+ encoding
+
+---
+ src/os/win32/ngx_files.c | 55 +++++++++++++++++++++++++++++++++-------
+ 1 file changed, 46 insertions(+), 9 deletions(-)
+
+diff --git a/src/os/win32/ngx_files.c b/src/os/win32/ngx_files.c
+index fb413f2..87b3210 100644
+--- a/src/os/win32/ngx_files.c
++++ b/src/os/win32/ngx_files.c
+@@ -238,18 +238,41 @@ ngx_write_console(ngx_fd_t fd, void *buf, size_t size)
+ ngx_err_t
+ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
+ {
+-    u_char             *name;
++    u_short            *name;
+     ngx_err_t           err;
+     ngx_uint_t          collision;
+     ngx_atomic_uint_t   num;
++    size_t              to_len;
++    u_short             to_utf16[NGX_UTF16_BUFLEN];
++    u_short            *to_u;
++    size_t              from_len;
++    u_short             from_utf16[NGX_UTF16_BUFLEN];
++    u_short            *from_u;
++    size_t              buffer_size;
++
++    to_len = NGX_UTF16_BUFLEN;
++    to_u = ngx_utf8_to_utf16(to_utf16, to->data, &to_len);
++
++    if (to_u == NULL) {
++        return NGX_ENOMEM;
++    }
+ 
+-    name = ngx_alloc(to->len + 1 + NGX_ATOMIC_T_LEN + 1 + sizeof("DELETE"),
+-                     log);
++    from_len = NGX_UTF16_BUFLEN;
++    from_u = ngx_utf8_to_utf16(from_utf16, from->data, &from_len);
++
++    if (from_u == NULL) {
++        err = NGX_ENOMEM;
++        goto failed_to;
++    }
++
++    buffer_size = to_len + 1 + (NGX_ATOMIC_T_LEN << 1) + 1 + sizeof(L"DELETE");
++    name = ngx_alloc(buffer_size, log);
+     if (name == NULL) {
+-        return NGX_ENOMEM;
++        err = NGX_ENOMEM;
++        goto failed_from;
+     }
+ 
+-    ngx_memcpy(name, to->data, to->len);
++    ngx_memcpy(name, to_u, to_len);
+ 
+     collision = 0;
+ 
+@@ -258,9 +281,9 @@ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
+     for ( ;; ) {
+         num = ngx_next_temp_number(collision);
+ 
+-        ngx_sprintf(name + to->len, ".%0muA.DELETE%Z", num);
++        swprintf(name + to_len, buffer_size - 1, L".%x.DELETE", num);
+ 
+-        if (MoveFile((const char *) to->data, (const char *) name) != 0) {
++        if (MoveFileW((LPCWSTR) to_u, (LPCWSTR) name) != 0) {
+             break;
+         }
+ 
+@@ -270,14 +293,14 @@ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
+                       "MoveFile() \"%s\" to \"%s\" failed", to->data, name);
+     }
+ 
+-    if (MoveFile((const char *) from->data, (const char *) to->data) == 0) {
++    if (MoveFileW((LPCWSTR) from_u, (LPCWSTR) to_u) == 0) {
+         err = ngx_errno;
+ 
+     } else {
+         err = 0;
+     }
+ 
+-    if (DeleteFile((const char *) name) == 0) {
++    if (DeleteFileW((LPCWSTR) name) == 0) {
+         ngx_log_error(NGX_LOG_CRIT, log, ngx_errno,
+                       "DeleteFile() \"%s\" failed", name);
+     }
+@@ -286,6 +309,20 @@ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
+ 
+     ngx_free(name);
+ 
++failed_from:
++    if (from_u != from_utf16) {
++        err = ngx_errno;
++        ngx_free(from_u);
++        ngx_set_errno(err);
++    }
++
++failed_to:
++    if (to_u != to_utf16) {
++        err = ngx_errno;
++        ngx_free(to_u);
++        ngx_set_errno(err);
++    }
++
+     return err;
+ }
+ 
+-- 
+2.23.0
+
