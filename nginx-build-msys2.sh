@@ -61,7 +61,8 @@ git checkout -b patch
 git am -3 ../nginx-*.patch
 
 # download deps
-wget -c -nv "https://zlib.net/${ZLIB}.tar.xz"
+wget -c -nv "https://zlib.net/${ZLIB}.tar.xz" || \
+  wget -c -nv "http://prdownloads.sourceforge.net/libpng/${ZLIB}.tar.xz"
 tar -xf "${ZLIB}.tar.xz"
 wget -c -nv "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
 tar -xf "${PCRE}.tar.bz2"
