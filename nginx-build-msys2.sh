@@ -32,10 +32,10 @@ ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV |
 ZLIB="${ZLIB:-zlib-1.2.11}"
 echo $ZLIB
 PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' | sort -ruV | head -1)"
-PCRE="${PCRE:-pcre-8.43}"
+PCRE="${PCRE:-pcre-8.44}"
 echo $PCRE
-OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1d}"
+OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-1\.(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
+OPENSSL="${OPENSSL:-openssl-1.1.1g}"
 echo $OPENSSL
 
 # clone and patch nginx
