@@ -40,7 +40,7 @@ echo $OPENSSL
 
 # clone and patch nginx
 if [[ -d nginx ]]; then
-    cd nginx
+    cd nginx || exit 1
     git checkout master
     git branch patch -D
     if [[ "${NGINX_TAG}" == "" ]]; then
@@ -52,11 +52,15 @@ if [[ -d nginx ]]; then
 else
     if [[ "${NGINX_TAG}" == "" ]]; then
         git clone https://github.com/nginx/nginx.git --depth=1
+        cd nginx || exit 1
     else
         git clone https://github.com/nginx/nginx.git --depth=1 --branch "${NGINX_TAG}"
+        cd nginx || exit 1
+        # You are in 'detached HEAD' state.
+        git checkout -b master
     fi
-    cd nginx
 fi
+
 git checkout -b patch
 git am -3 ../nginx-*.patch
 
