@@ -24,19 +24,19 @@ if [[ "${GIT_USER_NAME}" = "" ]]; then
     git config --global user.name "Build Bot"
 fi
 if [[ "${GIT_USER_EMAIL}" = "" ]]; then
-    git config --global user.email "you@example.com"
+    git config --global user.email "nobody@example.com"
 fi
 
 # dep versions
 ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV | head -1)"
 ZLIB="${ZLIB:-zlib-1.2.11}"
-echo $ZLIB
+echo "${ZLIB}"
 PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' | sort -ruV | head -1)"
-PCRE="${PCRE:-pcre-8.44}"
-echo $PCRE
+PCRE="${PCRE:-pcre-8.45}"
+echo "${PCRE}"
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-1\.(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1g}"
-echo $OPENSSL
+OPENSSL="${OPENSSL:-openssl-1.1.1l}"
+echo "${OPENSSL}"
 
 # clone and patch nginx
 if [[ -d nginx ]]; then
@@ -98,7 +98,6 @@ configure_args=(
     --http-fastcgi-temp-path=temp/fastcgi \
     --http-scgi-temp-path=temp/scgi \
     --http-uwsgi-temp-path=temp/uwsgi \
-    --with-http_v2_module \
     --with-http_realip_module \
     --with-http_addition_module \
     --with-http_sub_module \
@@ -114,35 +113,51 @@ configure_args=(
     --with-http_slice_module \
     --with-mail \
     --with-stream \
-    --with-pcre=${PCRE} \
+    "--with-pcre=${PCRE}" \
     --with-pcre-jit \
-    --with-zlib=${ZLIB} \
-    --with-openssl=${OPENSSL} \
-    --with-http_ssl_module \
-    --with-mail_ssl_module \
-    --with-stream_ssl_module \
+    "--with-zlib=${ZLIB}" \
     --with-ld-opt="-Wl,--gc-sections,--build-id=none" \
     --prefix=
 )
-echo ${configure_args[@]}
-auto/configure ${configure_args[@]} \
+
+# no-ssl build
+echo "${configure_args[@]}"
+auto/configure "${configure_args[@]}" \
+    --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe'
+
+# build
+make "-j$(nproc)"
+strip -s objs/nginx.exe
+version="$(cat src/core/nginx.h | grep NGINX_VERSION | grep -ioP '((\d+\.)+\d+)')"
+mv -f "objs/nginx.exe" "../nginx-slim-${version}-${machine_str}.exe"
+
+# re-configure with ssl
+configure_args+=(
+    --with-http_v2_module \
+    "--with-openssl=${OPENSSL}" \
+    --with-http_ssl_module \
+    --with-mail_ssl_module \
+    --with-stream_ssl_module
+)
+echo "${configure_args[@]}"
+auto/configure "${configure_args[@]}" \
     --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe' \
     --with-openssl-opt='no-tests -D_WIN32_WINNT=0x0501'
 
 # build
-make -j$(nproc)
+make "-j$(nproc)"
 strip -s objs/nginx.exe
 version="$(cat src/core/nginx.h | grep NGINX_VERSION | grep -ioP '((\d+\.)+\d+)')"
 mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 
 # re-configure with debugging log
 configure_args+=(--with-debug)
-auto/configure ${configure_args[@]}  \
+auto/configure "${configure_args[@]}"  \
     --with-cc-opt='-O2 -fno-strict-aliasing -pipe' \
     --with-openssl-opt='no-tests -D_WIN32_WINNT=0x0501'
 
 # re-build with debugging log
-make -j$(nproc)
+make "-j$(nproc)"
 mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}-debug.exe"
 
 # clean up
