@@ -98,6 +98,7 @@ configure_args=(
     --http-fastcgi-temp-path=temp/fastcgi \
     --http-scgi-temp-path=temp/scgi \
     --http-uwsgi-temp-path=temp/uwsgi \
+    --with-cc-opt=-DFD_SETSIZE=1024 \
     --with-http_realip_module \
     --with-http_addition_module \
     --with-http_sub_module \
