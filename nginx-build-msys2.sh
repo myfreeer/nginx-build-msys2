@@ -98,7 +98,6 @@ configure_args=(
     --http-fastcgi-temp-path=temp/fastcgi \
     --http-scgi-temp-path=temp/scgi \
     --http-uwsgi-temp-path=temp/uwsgi \
-    --with-cc-opt=-DFD_SETSIZE=1024 \
     --with-http_realip_module \
     --with-http_addition_module \
     --with-http_sub_module \
@@ -124,7 +123,7 @@ configure_args=(
 # no-ssl build
 echo "${configure_args[@]}"
 auto/configure "${configure_args[@]}" \
-    --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe'
+    --with-cc-opt='-DFD_SETSIZE=1024 -s -O2 -fno-strict-aliasing -pipe'
 
 # build
 make "-j$(nproc)"
@@ -142,7 +141,7 @@ configure_args+=(
 )
 echo "${configure_args[@]}"
 auto/configure "${configure_args[@]}" \
-    --with-cc-opt='-s -O2 -fno-strict-aliasing -pipe' \
+    --with-cc-opt='-DFD_SETSIZE=1024 -s -O2 -fno-strict-aliasing -pipe' \
     --with-openssl-opt='no-tests -D_WIN32_WINNT=0x0501'
 
 # build
@@ -154,7 +153,7 @@ mv -f "objs/nginx.exe" "../nginx-${version}-${machine_str}.exe"
 # re-configure with debugging log
 configure_args+=(--with-debug)
 auto/configure "${configure_args[@]}"  \
-    --with-cc-opt='-O2 -fno-strict-aliasing -pipe' \
+    --with-cc-opt='-DFD_SETSIZE=1024 -O2 -fno-strict-aliasing -pipe' \
     --with-openssl-opt='no-tests -D_WIN32_WINNT=0x0501'
 
 # re-build with debugging log
