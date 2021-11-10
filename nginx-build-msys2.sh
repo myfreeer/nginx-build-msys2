@@ -31,7 +31,7 @@ fi
 ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV | head -1)"
 ZLIB="${ZLIB:-zlib-1.2.11}"
 echo "${ZLIB}"
-PCRE="$(curl -s 'https://ftp.pcre.org/pub/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' | sort -ruV | head -1)"
+PCRE="$(curl -s 'https://sourceforge.net/projects/pcre/rss?path=/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' |sort -ruV | head -1)"
 PCRE="${PCRE:-pcre-8.45}"
 echo "${PCRE}"
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-1\.(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
@@ -68,7 +68,7 @@ git am -3 ../nginx-*.patch
 wget -c -nv "https://zlib.net/${ZLIB}.tar.xz" || \
   wget -c -nv "http://prdownloads.sourceforge.net/libpng/${ZLIB}.tar.xz"
 tar -xf "${ZLIB}.tar.xz"
-wget -c -nv "https://ftp.pcre.org/pub/pcre/${PCRE}.tar.bz2"
+wget -c -nv "https://download.sourceforge.net/project/pcre/pcre/$(echo $PCRE | sed 's/pcre-//')/${PCRE}.tar.bz2"
 tar -xf "${PCRE}.tar.bz2"
 wget -c -nv "https://www.openssl.org/source/${OPENSSL}.tar.gz"
 tar -xf "${OPENSSL}.tar.gz"
