@@ -76,6 +76,7 @@ if grep -q PCRE2_STATIC ./auto/lib/pcre/conf ; then
   echo using pcre2
   WITH_PCRE="${PCRE2}"
   wget -c -nv "https://github.com/PhilipHazel/pcre2/releases/download/${PCRE2}/${PCRE2}.tar.bz2"
+  tar -xf "${PCRE2}.tar.bz2"
 else
   wget -c -nv "https://download.sourceforge.net/project/pcre/pcre/$(echo $PCRE | sed 's/pcre-//')/${PCRE}.tar.bz2"
   tar -xf "${PCRE}.tar.bz2"
