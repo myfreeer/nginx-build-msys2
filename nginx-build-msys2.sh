@@ -98,7 +98,7 @@ mv -f tmp/*/CHANGES* ../docs/
 cp -f docs/text/LICENSE ../docs/
 cp -f docs/text/README ../docs/
 cp -pf "${OPENSSL}/LICENSE" '../docs/OpenSSL.LICENSE'
-cp -pf "${PCRE}/LICENCE" '../docs/PCRE.LICENCE'
+cp -pf "${WITH_PCRE}/LICENCE" '../docs/PCRE.LICENCE'
 sed -ne '/^ (C) 1995-20/,/^  jloup@gzip\.org/p' "${ZLIB}/README" > '../docs/zlib.LICENSE'
 touch -r "${ZLIB}/README" '../docs/zlib.LICENSE'
 
