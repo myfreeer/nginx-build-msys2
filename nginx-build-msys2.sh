@@ -34,8 +34,11 @@ echo "${ZLIB}"
 PCRE="$(curl -s 'https://sourceforge.net/projects/pcre/rss?path=/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' |sort -ruV | head -1)"
 PCRE="${PCRE:-pcre-8.45}"
 echo "${PCRE}"
+PCRE2="$(curl -s 'https://api.github.com/repos/PhilipHazel/pcre2/releases/latest' | grep -ioP 'pcre2-(\d+\.)+\d+' |sort -ruV | head -1)"
+PCRE2="${PCRE2:-pcre2-10.39}"
+echo "${PCRE2}"
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-1\.(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1l}"
+OPENSSL="${OPENSSL:-openssl-1.1.1m}"
 echo "${OPENSSL}"
 
 # clone and patch nginx
@@ -68,8 +71,16 @@ git am -3 ../nginx-*.patch
 wget -c -nv "https://zlib.net/${ZLIB}.tar.xz" || \
   wget -c -nv "http://prdownloads.sourceforge.net/libpng/${ZLIB}.tar.xz"
 tar -xf "${ZLIB}.tar.xz"
-wget -c -nv "https://download.sourceforge.net/project/pcre/pcre/$(echo $PCRE | sed 's/pcre-//')/${PCRE}.tar.bz2"
-tar -xf "${PCRE}.tar.bz2"
+WITH_PCRE="${PCRE}"
+if grep -q PCRE2_STATIC ./auto/lib/pcre/conf ; then
+  echo using pcre2
+  WITH_PCRE="${PCRE2}"
+  wget -c -nv "https://github.com/PhilipHazel/pcre2/releases/download/${PCRE2}/${PCRE2}.tar.bz2"
+else
+  wget -c -nv "https://download.sourceforge.net/project/pcre/pcre/$(echo $PCRE | sed 's/pcre-//')/${PCRE}.tar.bz2"
+  tar -xf "${PCRE}.tar.bz2"
+fi
+echo using pcre "${WITH_PCRE}"
 wget -c -nv "https://www.openssl.org/source/${OPENSSL}.tar.gz"
 tar -xf "${OPENSSL}.tar.gz"
 
@@ -113,7 +124,7 @@ configure_args=(
     --with-http_slice_module \
     --with-mail \
     --with-stream \
-    "--with-pcre=${PCRE}" \
+    "--with-pcre=${WITH_PCRE}" \
     --with-pcre-jit \
     "--with-zlib=${ZLIB}" \
     --with-ld-opt="-Wl,--gc-sections,--build-id=none" \
