@@ -9,8 +9,8 @@ nginx build scripts on msys2 mingw with dependencies and custom patches
 ## Features
 
 * native x86-64 (x64, amd64) build for windows.
-* nginx can execute in directory or path containing non-ascii characters.
-* read file names in directory as utf8 encoding (affecting autoindex module).
+* nginx can execute in directory or path containing non-ascii characters. (Not needed since [1.23.4](https://github.com/nginx/nginx/commits/release-1.23.4/src/os/win32))
+* read file names in directory as utf8 encoding (affecting autoindex module). (Not needed since [1.23.4](https://github.com/nginx/nginx/commits/release-1.23.4/src/os/win32))
 
 ## [Releases](https://github.com/myfreeer/nginx-build-msys2/releases)
 

@@ -29,16 +29,16 @@ fi
 
 # dep versions
 ZLIB="$(curl -s 'https://zlib.net/' | grep -ioP 'zlib-(\d+\.)+\d+' | sort -ruV | head -1)"
-ZLIB="${ZLIB:-zlib-1.2.11}"
+ZLIB="${ZLIB:-zlib-1.2.13}"
 echo "${ZLIB}"
 PCRE="$(curl -s 'https://sourceforge.net/projects/pcre/rss?path=/pcre/' | grep -ioP 'pcre-(\d+\.)+\d+' |sort -ruV | head -1)"
 PCRE="${PCRE:-pcre-8.45}"
 echo "${PCRE}"
 PCRE2="$(curl -s 'https://api.github.com/repos/PhilipHazel/pcre2/releases/latest' | grep -ioP 'pcre2-(\d+\.)+\d+' |sort -ruV | head -1)"
-PCRE2="${PCRE2:-pcre2-10.39}"
+PCRE2="${PCRE2:-pcre2-10.42}"
 echo "${PCRE2}"
 OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-1\.(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1m}"
+OPENSSL="${OPENSSL:-openssl-1.1.1t}"
 echo "${OPENSSL}"
 
 # clone and patch nginx
@@ -65,7 +65,20 @@ else
 fi
 
 git checkout -b patch
+
+# Since 1.23.4 utf16 encoded pathes are supported natively upstream
+# detect function ngx_utf16_to_utf8 introduced since nginx 1.23.4
+if [ "$(grep 'ngx_utf16_to_utf8' src/os/win32/ngx_files.c | wc -l)" -ge 2 ]; then
+    rm -f ../nginx-0003-ngx_files-implement-some-functions-in-utf8-encoding.patch
+    rm -f ../nginx-0004-ngx_files-implement-ngx_open_tempfile-in-utf8-encodi.patch
+    rm -f ../nginx-0005-ngx_files-implement-ngx_open_glob-and-ngx_read_glob-.patch
+    rm -f ../nginx-0006-ngx_files-implement-ngx_win32_rename_file-in-utf8-en.patch
+fi
+
+# apply remaining patches
 git am -3 ../nginx-*.patch
+
+set -e
 
 # download deps
 wget -c -nv "https://zlib.net/${ZLIB}.tar.xz" || \
