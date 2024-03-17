@@ -37,8 +37,8 @@ echo "${PCRE}"
 PCRE2="$(curl -s 'https://api.github.com/repos/PhilipHazel/pcre2/releases/latest' | grep -ioP 'pcre2-(\d+\.)+\d+' |sort -ruV | head -1)"
 PCRE2="${PCRE2:-pcre2-10.42}"
 echo "${PCRE2}"
-OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-1\.(\d+\.)+[a-z\d]+' | sort -ruV | head -1)"
-OPENSSL="${OPENSSL:-openssl-1.1.1t}"
+OPENSSL="$(curl -s 'https://www.openssl.org/source/' | grep -ioP 'openssl-3\.0\.(\d+\.)+' | sort -ruV | head -1)"
+OPENSSL="${OPENSSL:-openssl-3.0.13}"
 echo "${OPENSSL}"
 
 # clone and patch nginx
