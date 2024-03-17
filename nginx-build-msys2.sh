@@ -111,7 +111,7 @@ mv -f tmp/*/CHANGES* ../docs/
 # copy docs and licenses
 cp -f docs/text/LICENSE ../docs/
 cp -f docs/text/README ../docs/
-cp -pf "${OPENSSL}/LICENSE" '../docs/OpenSSL.LICENSE'
+cp -pf "${OPENSSL}/LICENSE.txt" '../docs/OpenSSL.LICENSE'
 cp -pf "${WITH_PCRE}/LICENCE" '../docs/PCRE.LICENCE'
 sed -ne '/^ (C) 1995-20/,/^  jloup@gzip\.org/p' "${ZLIB}/README" > '../docs/zlib.LICENSE'
 touch -r "${ZLIB}/README" '../docs/zlib.LICENSE'
@@ -139,6 +139,7 @@ configure_args=(
     --with-http_slice_module \
     --with-mail \
     --with-stream \
+    --with-stream_realip_module \
     "--with-pcre=${WITH_PCRE}" \
     --with-pcre-jit \
     "--with-zlib=${ZLIB}" \
@@ -163,7 +164,8 @@ configure_args+=(
     "--with-openssl=${OPENSSL}" \
     --with-http_ssl_module \
     --with-mail_ssl_module \
-    --with-stream_ssl_module
+    --with-stream_ssl_module \
+    --with-stream_ssl_preread_module
 )
 echo "${configure_args[@]}"
 auto/configure "${configure_args[@]}" \
