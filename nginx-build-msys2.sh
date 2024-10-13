@@ -109,8 +109,12 @@ make -f docs/GNUmakefile changes
 mv -f tmp/*/CHANGES* ../docs/
 
 # copy docs and licenses
-cp -f docs/text/LICENSE ../docs/
-cp -f docs/text/README ../docs/
+cp -f docs/text/LICENSE ../docs/ || cp -f LICENSE ../docs/
+cp -f docs/text/README ../docs/ || cp -f README.md ../docs/
+if [[ -d docs/html ]]; then
+    mkdir -p ../html
+    cp -f docs/html/* ../html/
+fi
 cp -pf "${OPENSSL}/LICENSE.txt" '../docs/OpenSSL.LICENSE'
 cp -pf "${WITH_PCRE}/LICENCE" '../docs/PCRE.LICENCE'
 sed -ne '/^ (C) 1995-20/,/^  jloup@gzip\.org/p' "${ZLIB}/README" > '../docs/zlib.LICENSE'
