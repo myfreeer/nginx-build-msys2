@@ -110,7 +110,7 @@ mv -f tmp/*/CHANGES* ../docs/
 
 # copy docs and licenses
 cp -f docs/text/LICENSE ../docs/ || cp -f LICENSE ../docs/
-cp -f docs/text/README ../docs/ || cp -f README.md ../docs/
+cp -f docs/text/README ../docs/ || cp -f README.md ../docs/ || cp -f README ../docs/
 if [[ -d docs/html ]]; then
     mkdir -p ../html
     cp -f docs/html/* ../html/
