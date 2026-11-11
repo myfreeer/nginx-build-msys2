@@ -1,0 +1,61 @@
+From 9be0f1512bc14f37c396e1404bd4da05d754257f Mon Sep 17 00:00:00 2001
+From: kiekle <kiekle@users.noreply.github.com>
+Date: Thu, 12 Nov 2026 03:09:35 +0800
+Subject: [PATCH] win32: inherit standard handles in worker processes
+
+---
+ src/os/win32/ngx_process.c | 34 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/src/os/win32/ngx_process.c b/src/os/win32/ngx_process.c
+index 57b1ae9..8398610 100644
+--- a/src/os/win32/ngx_process.c
++++ b/src/os/win32/ngx_process.c
+@@ -208,14 +208,46 @@ ngx_execute(ngx_cycle_t *cycle, ngx_exec_ctx_t *ctx)
+ {
+     STARTUPINFO          si;
+     PROCESS_INFORMATION  pi;
++    HANDLE               hin, hout, herr;
+ 
+     ngx_memzero(&si, sizeof(STARTUPINFO));
+     si.cb = sizeof(STARTUPINFO);
+ 
++    /*
++     * Inherit the standard handles of the master process, so that
++     * worker processes can write access and error logs to stderr
++     * when nginx is started from a console or by a supervisor.
++     */
++    hin  = GetStdHandle(STD_INPUT_HANDLE);
++    hout = GetStdHandle(STD_OUTPUT_HANDLE);
++    herr = GetStdHandle(STD_ERROR_HANDLE);
++
++    if (hin != NULL && hin != INVALID_HANDLE_VALUE) {
++        SetHandleInformation(hin, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
++        si.hStdInput = hin;
++    }
++
++    if (hout != NULL && hout != INVALID_HANDLE_VALUE) {
++        SetHandleInformation(hout, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
++        si.hStdOutput = hout;
++    }
++
++    if (herr != NULL && herr != INVALID_HANDLE_VALUE) {
++        SetHandleInformation(herr, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
++        si.hStdError = herr;
++    }
++
++    if (si.hStdInput != NULL
++        || si.hStdOutput != NULL
++        || si.hStdError != NULL)
++    {
++        si.dwFlags |= STARTF_USESTDHANDLES;
++    }
++
+     ngx_memzero(&pi, sizeof(PROCESS_INFORMATION));
+ 
+     if (CreateProcess(ctx->path, ctx->args,
+-                      NULL, NULL, 0, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)
++                      NULL, NULL, 1, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)
+         == 0)
+     {
+         ngx_log_error(NGX_LOG_CRIT, cycle->log, ngx_errno,
